@@ -14,37 +14,41 @@ using namespace std;
 class pool
 {
 	public:
-		pool(int max_size_ = 1000): max_size(max_size_) {};
+		pool(int max_size_ = 10): max_size(max_size_) {};
 		void push(int el)
 		{
-			boost::mutex::scoped_lock q_lock(queue_mutex);
+			cout << "\033[1;31m DGDG \033[0m push start\n";
+			queue_mutex.lock();
 			if (queue.size() < max_size) {
 				cout << "queue push\n" << queue.size();
 				queue.push(el);
+				wait_sec(1);
 			}
 			else {
-				//wait_sec(2);
+				queue_mutex.unlock();
+				wait_sec(1);
+				queue_mutex.lock();
 			}
-			
+			queue_mutex.unlock();
 		};
 		void pop()
 		{
-			boost::mutex::scoped_lock q_lock(queue_mutex);
+			cout << "\033[1;31m DGDG \033[0m pop start\n";
+			queue_mutex.lock();
 			if (queue.size() > 0) {
 				cout << "queue pop\n" << queue.size();
 				queue.pop();
+				wait_sec(1);
 			}
 			else {
-				//wait_sec(1);
+				queue_mutex.unlock();
+				wait_sec(1);
+				queue_mutex.lock();
 			}
+			queue_mutex.unlock();
+
 		}
-		
-		//int size() {
-			//boost::mutex::scoped_lock q_lock(queue_mutex);
-			////boost::posix_time::seconds work_time(1);
-			////boost::this_thread::sleep(work_time);
-			//return queue.size();
-			//}
+
 	private:
 		void wait_sec(int seconds)
 		{
@@ -54,6 +58,7 @@ class pool
 		}
 		std::queue<int> queue;
 		mutable boost::mutex queue_mutex;
+		mutable boost::mutex push_mutex, pop_mutex;
 		int max_size;
 };
 
@@ -93,10 +98,7 @@ class market
 		  producers_number(producers_number_),
 		  consumers_number(consumers_number_)
 		{}
-		//void start_market(int producers_number, int consumers_number)
-		//{
 
-		//};
 		void start_market()
 		{
 			producer prod(storage);
@@ -134,15 +136,5 @@ TEST(test1, producer_consumer)
 {
 	market market_(1, 1);
 	market_.start_market();
-}
-
-TEST(test1, DISABLED_addition)
-{
-	boost::optional<int> a;
-	boost::shared_ptr<int> b(new int);
-	ASSERT_FALSE(a);
-	a = 2;
-	ASSERT_TRUE(a);
-	EXPECT_EQ(4, 2+2);
 }
 
