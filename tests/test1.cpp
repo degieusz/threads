@@ -4,6 +4,7 @@
 #include <boost/thread.hpp>
 
 #include <boost/thread/thread.hpp>
+#include <boost/thread/condition_variable.hpp>
 #include <boost/thread/mutex.hpp>
 #include <iostream>
 
@@ -18,35 +19,30 @@ class pool
 		void push(int el)
 		{
 			cout << "\033[1;31m DGDG \033[0m push start\n";
-			queue_mutex.lock();
 			if (queue.size() < max_size) {
+				boost::mutex::scoped_lock lock(mtx);
 				cout << "queue push\n" << queue.size();
 				queue.push(el);
 				wait_sec(1);
+				cond_queue.notify_one();
 			}
 			else {
-				queue_mutex.unlock();
 				wait_sec(1);
-				queue_mutex.lock();
 			}
-			queue_mutex.unlock();
 		};
 		void pop()
 		{
 			cout << "\033[1;31m DGDG \033[0m pop start\n";
-			queue_mutex.lock();
+			boost::mutex::scoped_lock lock(mtx);
 			if (queue.size() > 0) {
 				cout << "queue pop\n" << queue.size();
 				queue.pop();
 				wait_sec(1);
 			}
 			else {
-				queue_mutex.unlock();
+				cond_queue.wait(lock);
 				wait_sec(1);
-				queue_mutex.lock();
 			}
-			queue_mutex.unlock();
-
 		}
 
 	private:
@@ -57,8 +53,8 @@ class pool
 			boost::this_thread::sleep(work_time);
 		}
 		std::queue<int> queue;
-		mutable boost::mutex queue_mutex;
-		mutable boost::mutex push_mutex, pop_mutex;
+		mutable boost::mutex mtx;
+		mutable boost::condition_variable cond_queue;
 		int max_size;
 };
 
@@ -115,23 +111,7 @@ class market
 		int producers_number;
 		int consumers_number;
 };
-void worker_function()
-{
-	boost::posix_time::seconds work_time(3);
-	std::cout << "worker running" << std::endl;
-	boost::this_thread::sleep(work_time);
 
-	std::cout << "worker finished" << std::endl;
-}
-
-TEST(test1, DISABLED_thread_spawn)
-{
-	cout << "start\n";
-	boost::thread worker_thread(worker_function);
-	cout << "wait\n";
-	worker_thread.join();
-	cout << "stop\n";
-}
 TEST(test1, producer_consumer)
 {
 	market market_(1, 1);
