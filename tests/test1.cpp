@@ -18,12 +18,12 @@ class pool
 		pool(int max_size_ = 10): max_size(max_size_) {};
 		void push(int el)
 		{
-			cout << boost::this_thread::get_id() << " :";
+			cout << "t: " << el;
 			//boost::mutex::scoped_lock lock(mtx);
 			if (queue.size() < max_size) {
 				//boost::mutex::scoped_lock lock(mtx);
 				queue.push(el);
-				cout << "push" << queue.size() << endl;
+				cout <<  ", push el no:" << queue.size() << endl;
 				wait_sec(1);
 				to_few.notify_one();
 			}
@@ -35,10 +35,10 @@ class pool
 		};
 		void pop()
 		{
-			cout << boost::this_thread::get_id() << " :";
+			cout << "t: " << queue.front();
 			boost::mutex::scoped_lock lock(mtx);
 			if (queue.size() > 0) {
-				cout << "pop" << queue.size() << endl;
+				cout << ", pop el no:" << queue.size() << endl;
 				queue.pop();
 				//to_much.notify_one();
 				wait_sec(1);
@@ -69,7 +69,6 @@ class producer
 		void produce()
 		{
 			while (true) {
-				//cout << "\033[1;31m DGDG \033[0m producer" << my_id << endl;
 				storage->push(my_id);
 			}
 		}
@@ -86,7 +85,6 @@ class consumer
 		void consume()
 		{
 			while (true) {
-				//cout << "\033[1;31m DGDG \033[0m consument" << my_id << endl;
 				storage->pop();
 			}
 		};
